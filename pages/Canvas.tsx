@@ -9,7 +9,7 @@ import {
   Modal,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { Ionicons, EvilIcons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Slider from "@react-native-community/slider";
@@ -33,6 +33,7 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
   const [paths, setPaths] = useState<PathObj[]>([]);
   const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [color, setColor] = useState<string>("white"); // State to track the selected color
+  const [isDragMode, setIsDragMode] = useState(false);
   const [strokeWidth, setStrokeWidth] = useState<number>(5);
   const [isColorOptionsVisible, setIsColorOptionsVisible] =
     useState<boolean>(false); // Color overlay visibility
@@ -62,10 +63,12 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
 
   // Handle touch move events
   const onTouchMove = (event: GestureResponderEvent) => {
-    const locationX = event.nativeEvent.locationX;
-    const locationY = event.nativeEvent.locationY;
-    const newPath = [...currentPath, `L ${locationX},${locationY}`]; // Draw a line to the new point
-    setCurrentPath(newPath);
+    if (!isDragMode) {
+      const locationX = event.nativeEvent.locationX;
+      const locationY = event.nativeEvent.locationY;
+      const newPath = [...currentPath, `L ${locationX},${locationY}`]; // Draw a line to the new point
+      setCurrentPath(newPath);
+    }
   };
 
   // Handle touch end events
@@ -79,38 +82,49 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
     setPaths([]); // Clear all paths
   };
 
+  const toggleDragMode = () => {
+    setIsDragMode(!isDragMode);
+  };
+
   return (
     <View style={styles.container}>
-      <View
-        style={styles.fullScreenCanvas}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+      <ScrollView
+        scrollEnabled={isDragMode}
+        horizontal={true}
+        maximumZoomScale={3}
+        minimumZoomScale={1}
       >
-        <Svg height="100%" width="100%">
-          {paths.map((pathObj, index) => (
-            <Path
-              key={index}
-              d={pathObj.path.join(" ")} // Join the path commands into a string
-              stroke={pathObj.color} // Use the path's specific color
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          ))}
-          {currentPath.length > 0 && (
-            <Path
-              d={currentPath.join(" ")} // Join the current path's commands
-              stroke={color} // Use the currently selected color
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          )}
-        </Svg>
-      </View>
+        <View
+          style={styles.fullScreenCanvas}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          <Svg height="4000" width="4000">
+            {paths.map((pathObj, index) => (
+              <Path
+                key={index}
+                d={pathObj.path.join(" ")} // Join the path commands into a string
+                stroke={pathObj.color} // Use the path's specific color
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            ))}
+            {currentPath.length > 0 && (
+              <Path
+                d={currentPath.join(" ")} // Join the current path's commands
+                stroke={color} // Use the currently selected color
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            )}
+          </Svg>
+        </View>
+      </ScrollView>
 
       {/* Back Button */}
       <TouchableOpacity
@@ -120,20 +134,36 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
         <Ionicons name="chevron-back-outline" size={24} color="white" />
       </TouchableOpacity>
 
-      {/* Toggle Color Options Button */}
-      <TouchableOpacity
-        onPress={() => setIsColorOptionsVisible(true)}
-        style={styles.toggleColorButton}
-      >
-        <View style={styles.colorChangeButton}>
-          <Ionicons
-            name={"color-palette-outline"}
-            color="white"
+      <View>
+        {/* Toggle Color Options Button */}
+        <TouchableOpacity
+          onPress={() => setIsColorOptionsVisible(true)}
+          style={styles.toggleColorButtonContainer}
+        >
+          <View style={styles.colorChangeButton}>
+            <Ionicons
+              name={"color-palette-outline"}
+              color="white"
+              size={18}
+            ></Ionicons>
+            <Text style={styles.toggleColorButtonText}>Change Color</Text>
+          </View>
+        </TouchableOpacity>
+        {/* Toggle Drag Mode Button */}
+        <TouchableOpacity
+          style={{
+            ...styles.dragModeButton,
+            backgroundColor: isDragMode ? COLORS.turq : "transparent",
+          }}
+          onPress={() => toggleDragMode()}
+        >
+          <FontAwesome5
+            name={"hand-paper"}
+            color={isDragMode ? "black" : COLORS.turq}
             size={18}
-          ></Ionicons>
-          <Text style={styles.toggleColorButtonText}>Change Color</Text>
-        </View>
-      </TouchableOpacity>
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Clear Button */}
       <TouchableOpacity onPress={clearCanvas} style={styles.clearButton}>
@@ -145,7 +175,7 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
       <Modal
         visible={isColorOptionsVisible}
         transparent={true}
-        animationType="fade"
+        animationType="slide"
       >
         <View style={styles.colorOverlay}>
           <View style={{ gap: 0 }}>
@@ -234,7 +264,7 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#212121",
+    backgroundColor: COLORS.canvasBackground,
   },
   fullScreenCanvas: {
     flex: 1,
@@ -250,7 +280,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
   },
-  toggleColorButton: {
+  toggleColorButtonContainer: {
     position: "absolute",
     bottom: 40,
     right: 20,
@@ -261,6 +291,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderColor: "#ffffff30",
     borderWidth: 1,
+    backgroundColor: COLORS.canvasBackground,
   },
   toggleColorButtonText: {
     color: "white",
@@ -300,6 +331,18 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     borderWidth: 3,
     borderColor: "white",
+  },
+  dragModeButton: {
+    position: "absolute",
+    bottom: 100,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: COLORS.turq,
+    justifyContent: "center",
+    alignItems: "center",
   },
   colorChangeButton: {
     flexDirection: "row",

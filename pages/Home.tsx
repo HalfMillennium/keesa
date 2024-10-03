@@ -96,14 +96,7 @@ const NavBoxLeft: React.FC<NavBoxProps> = ({ onPress, children }) => {
   );
 };
 
-interface AnimatedButtonSpec {
-  title: string;
-  icon: string;
-  active: boolean;
-  onPress: () => void;
-}
-
-const mainNavOptions: AnimatedButtonSpec[] = [
+const mainNavOptions = [
   {
     title: "home",
     icon: "home",

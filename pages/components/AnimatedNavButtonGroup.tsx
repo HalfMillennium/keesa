@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
-import { COLORS } from './common';
-import styled from 'styled-components/native';
+import React, { useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, Animated, Easing } from "react-native";
+import { AntDesign } from "@expo/vector-icons";
+import { COLORS } from "./common";
+import styled from "styled-components/native";
 
 // Styled Component for Text
 export const WorkSansText = styled.Text`
@@ -13,7 +13,7 @@ export const WorkSansText = styled.Text`
 // Define the type for button specs
 export interface AnimatedButtonSpec {
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   active: boolean;
   onPress: () => void;
 }
@@ -47,32 +47,56 @@ export const AnimatedNavButtonGroup: React.FC<AnimatedNavButtonGroupProps> = ({
   }, [animations, buttonSpecs]);
 
   return (
-    <View style={{ display: 'flex', flexDirection: 'row', marginTop: 20, marginBottom: 20, gap: 5 }}>
+    <View
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        marginTop: 20,
+        marginBottom: 20,
+        gap: 5,
+      }}
+    >
       {buttonSpecs.map((buttonSpec, index) => (
         <Animated.View
           key={buttonSpec.title}
-          style={{ transform: [{ translateX: animations[index] }], flex: 1 }}>
+          style={{ transform: [{ translateX: animations[index] }], flex: 1 }}
+        >
           <TouchableOpacity
             style={{
-              backgroundColor: activeButtonName === buttonSpec.title
-                ? COLORS.buttonActive
-                : COLORS.buttonInactive,
+              backgroundColor:
+                activeButtonName === buttonSpec.title
+                  ? COLORS.buttonActive
+                  : COLORS.buttonInactive,
               padding: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'row',
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "row",
               borderRadius: 20,
               gap: 5,
-              display: 'flex',
+              display: "flex",
             }}
-            onPress={() => setActiveButton(buttonSpec.title)}>
+            onPress={() => setActiveButton(buttonSpec.title)}
+          >
             <AntDesign
-              name={(buttonSpec.icon) as "key"}
+              name={buttonSpec.icon as "key"}
               size={14}
-              style={{lineHeight: 15}}
-              color={activeButtonName === buttonSpec.title ? COLORS.text : COLORS.background}
+              style={{ lineHeight: 15 }}
+              color={
+                activeButtonName === buttonSpec.title
+                  ? COLORS.text
+                  : COLORS.background
+              }
             />
-            <WorkSansText style={{ color: activeButtonName === buttonSpec.title ? COLORS.text : COLORS.background, fontSize: 12, lineHeight: 20 }}>
+            <WorkSansText
+              style={{
+                color:
+                  activeButtonName === buttonSpec.title
+                    ? COLORS.text
+                    : COLORS.background,
+                fontSize: 12,
+                lineHeight: 20,
+              }}
+            >
               {buttonSpec.title}
             </WorkSansText>
           </TouchableOpacity>
