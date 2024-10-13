@@ -5,11 +5,10 @@ import {
   Text,
   StyleSheet,
   GestureResponderEvent,
-  ScrollView,
   Modal,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
-import { Ionicons, EvilIcons } from "@expo/vector-icons";
+import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
+import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Slider from "@react-native-community/slider";
@@ -17,25 +16,23 @@ import { COLORS } from "./components/common";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../App";
 
-// Define types for the path and path objects
-interface PathObj {
-  path: string[];
-  color: string;
-}
-
 type CanvasNavigationProp = StackNavigationProp<RootStackParamList, "Canvas">;
 
 interface CanvasProps {
   navigation: CanvasNavigationProp;
 }
 
-export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
-  const [paths, setPaths] = useState<PathObj[]>([]);
-  const [currentPath, setCurrentPath] = useState<string[]>([]);
+interface SkiaPathPoint {
+  path: SkPath;
+  color: string;
+}
+
+export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
+  const [skiaPaths, setSkiaPaths] = useState<SkiaPathPoint[]>([]);
+  const [currentSkiaPath, setCurrentSkiaPath] = useState<SkPath | null>(null);
   const [color, setColor] = useState<string>("white"); // State to track the selected color
   const [strokeWidth, setStrokeWidth] = useState<number>(5);
-  const [isColorOptionsVisible, setIsColorOptionsVisible] =
-    useState<boolean>(false); // Color overlay visibility
+  const [isColorOptionsVisible, setIsColorOptionsVisible] = useState<boolean>(false); // Color overlay visibility
   const [fontsLoaded] = useFonts({
     WorkSans: require("./assets/fonts/WorkSans.ttf"),
   });
@@ -48,7 +45,7 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
   }, []);
 
   if (!fontsLoaded) {
-    return undefined;
+    return null;
   } else {
     SplashScreen.hideAsync();
   }
@@ -57,26 +54,32 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
   const onTouchStart = (event: GestureResponderEvent) => {
     const locationX = event.nativeEvent.locationX;
     const locationY = event.nativeEvent.locationY;
-    setCurrentPath([`M ${locationX},${locationY}`]); // Move to the starting point
+    const newPath = Skia.Path.Make();
+    newPath.moveTo(locationX, locationY);
+    setCurrentSkiaPath(newPath);
   };
 
   // Handle touch move events
   const onTouchMove = (event: GestureResponderEvent) => {
-    const locationX = event.nativeEvent.locationX;
-    const locationY = event.nativeEvent.locationY;
-    const newPath = [...currentPath, `L ${locationX},${locationY}`]; // Draw a line to the new point
-    setCurrentPath(newPath);
+    if (currentSkiaPath) {
+      const locationX = event.nativeEvent.locationX;
+      const locationY = event.nativeEvent.locationY;
+      currentSkiaPath.lineTo(locationX, locationY);
+      setCurrentSkiaPath(currentSkiaPath);
+    }
   };
 
   // Handle touch end events
   const onTouchEnd = () => {
-    setPaths([...paths, { path: currentPath, color }]); // Store the path with its color
-    setCurrentPath([]); // Reset current path
+    if (currentSkiaPath) {
+      setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color }]);
+      setCurrentSkiaPath(null);
+    }
   };
 
   // Clear the canvas
   const clearCanvas = () => {
-    setPaths([]); // Clear all paths
+    setSkiaPaths([]); // Clear all paths
   };
 
   return (
@@ -87,38 +90,81 @@ export const Canvas: React.FC<CanvasProps> = ({ navigation }) => {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <Svg height="100%" width="100%">
-          {paths.map((pathObj, index) => (
+        <Canvas style={{ flex: 1 }}>
+          {skiaPaths.map((pathObj, index) => (
             <Path
               key={index}
-              d={pathObj.path.join(" ")} // Join the path commands into a string
-              stroke={pathObj.color} // Use the path's specific color
+              path={pathObj.path}
+              color={pathObj.color}
+              style="stroke"
               strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
+              strokeCap="round"
+              strokeJoin="round"
             />
           ))}
-          {currentPath.length > 0 && (
+          {currentSkiaPath && (
             <Path
-              d={currentPath.join(" ")} // Join the current path's commands
-              stroke={color} // Use the currently selected color
+              path={currentSkiaPath}
+              color={color}
+              style="stroke"
               strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
+              strokeCap="round"
+              strokeJoin="round"
             />
           )}
-        </Svg>
+        </Canvas>
       </View>
 
-      {/* Back Button */}
       <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.navigate("Home")}
-      >
+          style={styles.backButton}
+          onPress={() => navigation.navigate("Home")}
+        >
         <Ionicons name="chevron-back-outline" size={24} color="white" />
       </TouchableOpacity>
+      <View style={styles.colorPanel}>
+          <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: "white" }]}
+              onPress={() => {
+                setColor("white");
+                setIsColorOptionsVisible(false);
+              }}
+            />
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: COLORS.pastelRed }]}
+              onPress={() => {
+                setColor(COLORS.pastelRed);
+                setIsColorOptionsVisible(false);
+              }}
+            />
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: COLORS.babyBlue }]}
+              onPress={() => {
+                setColor(COLORS.babyBlue);
+                setIsColorOptionsVisible(false);
+              }}
+            />
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: COLORS.pastelGreen }]}
+              onPress={() => {
+                setColor(COLORS.pastelGreen);
+                setIsColorOptionsVisible(false);
+              }}
+            />
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: COLORS.goldYellow }]}
+              onPress={() => {
+                setColor(COLORS.goldYellow);
+                setIsColorOptionsVisible(false);
+              }}
+            />
+            <TouchableOpacity
+              style={[styles.colorButton, { backgroundColor: COLORS.softLavender }]}
+              onPress={() => {
+                setColor(COLORS.softLavender);
+                setIsColorOptionsVisible(false);
+              }}
+            />
+        </View>
 
       {/* Toggle Color Options Button */}
       <TouchableOpacity
@@ -239,16 +285,18 @@ const styles = StyleSheet.create({
   fullScreenCanvas: {
     flex: 1,
   },
-  backButton: {
+  colorPanel: {
     position: "absolute",
+    gap: 5,
     top: 70,
-    left: 20,
+    right: 20
+  },
+  backButton: {
     padding: 10,
     borderRadius: 5,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
+    position: "absolute",
+    top: 70,
+    left: 20
   },
   toggleColorButton: {
     position: "absolute",
@@ -294,11 +342,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   colorButton: {
-    width: 60,
-    height: 60,
+    width:45,
+    height: 45,
     margin: 10,
     borderRadius: 30,
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: "white",
   },
   colorChangeButton: {
@@ -317,3 +365,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+export default CanvasComponent;

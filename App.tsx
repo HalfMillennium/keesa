@@ -4,7 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { View, StatusBar, StyleSheet } from "react-native"; // Import StatusBar
 import { Home } from "./pages/Home";
 import { RecordingStudio } from "./pages/RecordingStudio";
-import { Canvas } from "./pages/Canvas";
+import { CanvasComponent } from "./pages/Canvas";
 
 // Define types for your stack's routes
 export type RootStackParamList = {
@@ -38,7 +38,7 @@ const App: React.FC = () => {
             />
             <Stack.Screen
               name="Canvas"
-              component={Canvas}
+              component={CanvasComponent}
               options={{ headerShown: false, gestureEnabled: false }} // Hide header for Studio
             />
           </Stack.Navigator>

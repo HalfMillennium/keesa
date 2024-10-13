@@ -9,5 +9,10 @@ export const COLORS = {
   teal: '#009B77',
   recentJot: '#333333',
   lightGray: '#606060',
-  navBoxIcon: '#333333'
+  navBoxIcon: '#333333',
+  pastelRed: '#FF6961',
+  babyBlue: '#89CFF0',
+  pastelGreen: '#77DD77',
+  pastelBeige: '#FDFD96',
+  softLavender: '#BF94E4' // Added soft lavender
 };
