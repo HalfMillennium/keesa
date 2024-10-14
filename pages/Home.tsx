@@ -22,21 +22,6 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import styled from "styled-components/native";
 
-const HeaderText = styled.Text`
-  font-size: 24px;
-  font-weight: bold;
-  font-family: WorkSans;
-  width: auto;
-  color: ${COLORS.text};
-  align-self: flex-start;
-`;
-
-const MediumHeaderText = styled.Text`
-  font-size: 20px;
-  font-family: WorkSans;
-  color: ${COLORS.text};
-`;
-
 interface NavBoxProps {
   onPress: () => void;
   children: React.ReactNode;
@@ -183,6 +168,7 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
 
   const [fontsLoaded] = useFonts({
     WorkSans: require("./assets/fonts/WorkSans.ttf"),
+    "WorkSans-Bold": require("./assets/fonts/WorkSans-Bold.ttf")
   });
 
   if (!fontsLoaded) {
@@ -212,7 +198,7 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
             borderColor: COLORS.hotPink,
           }}
         >
-          <HeaderText>keesa</HeaderText>
+          <Text style={styles.headerText}>keesa</Text>
         </View>
       </View>
     );
@@ -302,9 +288,9 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
           }}
         >
           <View style={{ height: 40, flex: 1 }}>
-            <MediumHeaderText style={{ opacity: 0.9, fontSize: 18 }}>
+            <Text style={styles.mediumHeaderText}>
               Recent jots
-            </MediumHeaderText>
+            </Text>
             <WorkSansText
               style={{
                 fontSize: 12,
@@ -331,3 +317,20 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({ 
+  headerText: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: COLORS.text,
+    alignSelf: "flex-start",
+    width: "auto",
+  },
+  mediumHeaderText: {
+    fontSize: 18,
+    fontFamily: "WorkSans",
+    fontWeight: 600,
+    color: COLORS.text,
+    opacity: 0.9
+  }
+});

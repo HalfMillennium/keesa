@@ -8,13 +8,14 @@ import {
   Modal,
 } from "react-native";
 import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Slider from "@react-native-community/slider";
 import { COLORS } from "./components/common";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../App";
+import { STROKE_WIDTHS, StrokeTypes } from "./components/stroke";
 
 type CanvasNavigationProp = StackNavigationProp<RootStackParamList, "Canvas">;
 
@@ -30,9 +31,12 @@ interface SkiaPathPoint {
 export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   const [skiaPaths, setSkiaPaths] = useState<SkiaPathPoint[]>([]);
   const [currentSkiaPath, setCurrentSkiaPath] = useState<SkPath | null>(null);
-  const [color, setColor] = useState<string>("white"); // State to track the selected color
-  const [strokeWidth, setStrokeWidth] = useState<number>(5);
-  const [isColorOptionsVisible, setIsColorOptionsVisible] = useState<boolean>(false); // Color overlay visibility
+
+  // Stroke options
+  const [strokeColor, setStrokeColor] = useState<string>("white"); // State to track the selected color
+  const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTHS[StrokeTypes.THIN]);
+
+  const [isStrokeOptionsVisible, setIsStrokeOptionsVisible] = useState<boolean>(false); // Color overlay visibility
   const [fontsLoaded] = useFonts({
     WorkSans: require("./assets/fonts/WorkSans.ttf"),
   });
@@ -72,7 +76,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   // Handle touch end events
   const onTouchEnd = () => {
     if (currentSkiaPath) {
-      setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color }]);
+      setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color: strokeColor }]);
       setCurrentSkiaPath(null);
     }
   };
@@ -105,7 +109,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
           {currentSkiaPath && (
             <Path
               path={currentSkiaPath}
-              color={color}
+              color={strokeColor}
               style="stroke"
               strokeWidth={strokeWidth}
               strokeCap="round"
@@ -125,59 +129,59 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
           <TouchableOpacity
               style={[styles.colorButton, { backgroundColor: "white" }]}
               onPress={() => {
-                setColor("white");
-                setIsColorOptionsVisible(false);
+                setStrokeColor("white");
+                setIsStrokeOptionsVisible(false);
               }}
             />
             <TouchableOpacity
               style={[styles.colorButton, { backgroundColor: COLORS.pastelRed }]}
               onPress={() => {
-                setColor(COLORS.pastelRed);
-                setIsColorOptionsVisible(false);
+                setStrokeColor(COLORS.pastelRed);
+                setIsStrokeOptionsVisible(false);
               }}
             />
             <TouchableOpacity
               style={[styles.colorButton, { backgroundColor: COLORS.babyBlue }]}
               onPress={() => {
-                setColor(COLORS.babyBlue);
-                setIsColorOptionsVisible(false);
+                setStrokeColor(COLORS.babyBlue);
+                setIsStrokeOptionsVisible(false);
               }}
             />
             <TouchableOpacity
               style={[styles.colorButton, { backgroundColor: COLORS.pastelGreen }]}
               onPress={() => {
-                setColor(COLORS.pastelGreen);
-                setIsColorOptionsVisible(false);
+                setStrokeColor(COLORS.pastelGreen);
+                setIsStrokeOptionsVisible(false);
               }}
             />
             <TouchableOpacity
               style={[styles.colorButton, { backgroundColor: COLORS.goldYellow }]}
               onPress={() => {
-                setColor(COLORS.goldYellow);
-                setIsColorOptionsVisible(false);
+                setStrokeColor(COLORS.goldYellow);
+                setIsStrokeOptionsVisible(false);
               }}
             />
             <TouchableOpacity
               style={[styles.colorButton, { backgroundColor: COLORS.softLavender }]}
               onPress={() => {
-                setColor(COLORS.softLavender);
-                setIsColorOptionsVisible(false);
+                setStrokeColor(COLORS.softLavender);
+                setIsStrokeOptionsVisible(false);
               }}
             />
         </View>
 
-      {/* Toggle Color Options Button */}
+      {/* Toggle Stroke Options Button */}
       <TouchableOpacity
-        onPress={() => setIsColorOptionsVisible(true)}
+        onPress={() => setIsStrokeOptionsVisible(true)}
         style={styles.toggleColorButton}
       >
         <View style={styles.colorChangeButton}>
-          <Ionicons
-            name={"color-palette-outline"}
+          <MaterialCommunityIcons
+            name="draw"
             color="white"
             size={18}
-          ></Ionicons>
-          <Text style={styles.toggleColorButtonText}>Change Color</Text>
+          ></MaterialCommunityIcons>
+          <Text style={styles.toggleColorButtonText}>Edit Stroke</Text>
         </View>
       </TouchableOpacity>
 
@@ -187,87 +191,63 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
         <Text style={styles.clearButtonText}>Clear</Text>
       </TouchableOpacity>
 
-      {/* Color Options Overlay */}
+      {/* Stroke Options  Overlay */}
       <Modal
-        visible={isColorOptionsVisible}
+        visible={isStrokeOptionsVisible}
         transparent={true}
         animationType="fade"
       >
-        <View style={styles.colorOverlay}>
-          <View style={{ gap: 0 }}>
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: "white" }]}
-              onPress={() => {
-                setColor("white");
-                setIsColorOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: "red" }]}
-              onPress={() => {
-                setColor("red");
-                setIsColorOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: "blue" }]}
-              onPress={() => {
-                setColor("blue");
-                setIsColorOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: "green" }]}
-              onPress={() => {
-                setColor("green");
-                setIsColorOptionsVisible(false);
-              }}
-            />
-          </View>
+        <View style={styles.editStrokeOverlay}>
           <View
             style={{
               justifyContent: "center",
               width: "100%",
               alignItems: "center",
               paddingTop: 10,
+              gap: 20,
             }}
           >
-            <View
-              style={{
-                flexDirection: "row",
-                width: "30%",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: "WorkSans",
-                  fontStyle: "italic",
-                  color: COLORS.hotPink,
-                  fontWeight: "900",
+            <View style={styles.colorChangeButton}>
+              <MaterialCommunityIcons
+                name="draw"
+                color={COLORS.hotPink}
+                size={18}
+              ></MaterialCommunityIcons>
+              <Text style={styles.toggleColorButtonText}>Stroke Options</Text>
+            </View>
+            <View style={{flexDirection: 'row', gap: 20}}>
+              <TouchableOpacity
+                style={[styles.strokeOptionButton, {borderColor: strokeWidth === STROKE_WIDTHS[StrokeTypes.THIN] ? "white" : "#ffffff50"}]}
+                onPress={() => {
+                  setStrokeWidth(STROKE_WIDTHS[StrokeTypes.THIN]);
                 }}
               >
-                {strokeWidth}
-              </Text>
-              <Text style={{ color: "gray", fontFamily: "WorkSans" }}>
-                Stroke Width
-              </Text>
+                <Text style={{color: "white", fontSize: 14, textAlign: "center"}}>Thin</Text>
+                <Text style={{color: "#ffffff50", fontSize: 12, textAlign: "center", fontStyle: 'italic'}}>{`${STROKE_WIDTHS[StrokeTypes.THIN]}px`}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.strokeOptionButton, {borderColor: strokeWidth === STROKE_WIDTHS[StrokeTypes.MEDIUM] ? "white" : "#ffffff50"}]}
+                onPress={() => {
+                  setStrokeWidth(STROKE_WIDTHS[StrokeTypes.MEDIUM]);
+                }}
+              >
+                <Text style={{color: "white", fontSize: 14, textAlign: "center"}}>Medium</Text>
+                <Text style={{color: "#ffffff50", fontSize: 12, textAlign: "center", fontStyle: 'italic'}}>{`${STROKE_WIDTHS[StrokeTypes.MEDIUM]}px`}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.strokeOptionButton, {borderColor: strokeWidth === STROKE_WIDTHS[StrokeTypes.HEAVY] ? "white" : "#ffffff50"}]}
+                onPress={() => {
+                  setStrokeWidth(STROKE_WIDTHS[StrokeTypes.HEAVY]);
+                }}
+              >
+                <Text style={{color: "white", fontSize: 14, textAlign: "center"}}>Heavy</Text>
+                <Text style={{color: "#ffffff50", fontSize: 12, textAlign: "center", fontStyle: 'italic'}}>{`${STROKE_WIDTHS[StrokeTypes.HEAVY]}px`}</Text>
+              </TouchableOpacity>
             </View>
-            <Slider
-              style={{ width: "60%", height: 100 }}
-              step={1}
-              minimumValue={1}
-              maximumValue={100}
-              value={strokeWidth}
-              onValueChange={setStrokeWidth}
-              minimumTrackTintColor="#1EB1FC"
-              maximumTrackTintColor="#8E8E93"
-              thumbTintColor={COLORS.text}
-            />
           </View>
           <TouchableOpacity
             style={styles.closeOverlayButton}
-            onPress={() => setIsColorOptionsVisible(false)}
+            onPress={() => setIsStrokeOptionsVisible(false)}
           >
             <Text style={styles.closeOverlayText}>Close</Text>
           </TouchableOpacity>
@@ -280,7 +260,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#212121",
+    backgroundColor: COLORS.canvasBackground,
   },
   fullScreenCanvas: {
     flex: 1,
@@ -334,20 +314,31 @@ const styles = StyleSheet.create({
     fontFamily: "WorkSans",
     fontSize: 16,
   },
-  colorOverlay: {
+  editStrokeOverlay: {
     flex: 1,
-    gap: 30,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    gap: 20,
+    marginHorizontal: 30,
+    marginVertical: 300,
+    backgroundColor: "#000000",
+    borderRadius: 20,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center"
   },
   colorButton: {
-    width:45,
+    width: 45,
     height: 45,
     margin: 10,
     borderRadius: 30,
     borderWidth: 1,
     borderColor: "white",
+  },
+  strokeOptionButton: {
+    width: 75,
+    height: 75,
+    borderRadius: 100,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center"
   },
   colorChangeButton: {
     flexDirection: "row",
@@ -355,14 +346,16 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   closeOverlayButton: {
+    borderRadius: 15,
     marginTop: 20,
-    padding: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#ffffff90",
+    padding: 5,
+    paddingHorizontal: 15,
+    backgroundColor: "#ffffff70",
   },
   closeOverlayText: {
     color: "black",
     fontSize: 16,
+    letterSpacing: 1
   },
 });
 

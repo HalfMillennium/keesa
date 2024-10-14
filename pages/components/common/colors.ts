@@ -14,5 +14,6 @@ export const COLORS = {
   babyBlue: '#89CFF0',
   pastelGreen: '#77DD77',
   pastelBeige: '#FDFD96',
-  softLavender: '#BF94E4' // Added soft lavender
+  softLavender: '#BF94E4',
+  canvasBackground: '#212121',
 };
