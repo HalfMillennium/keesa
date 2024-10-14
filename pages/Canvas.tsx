@@ -16,6 +16,7 @@ import { COLORS } from "./components/common";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../App";
 import { STROKE_WIDTHS, StrokeTypes } from "./components/stroke";
+import { smoothPath } from "./utils";
 
 type CanvasNavigationProp = StackNavigationProp<RootStackParamList, "Canvas">;
 
@@ -124,7 +125,8 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
       }
     } else {
       if (currentSkiaPath) {
-        setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color: strokeColor, strokeWidth: strokeWidth }]);
+        const smoothedPath = smoothPath(currentSkiaPath);
+        setSkiaPaths([...skiaPaths, { path: smoothedPath, color: strokeColor, strokeWidth: strokeWidth }]);
         setCurrentSkiaPath(null);
       }
     }
