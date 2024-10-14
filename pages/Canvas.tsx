@@ -7,8 +7,8 @@ import {
   GestureResponderEvent,
   Modal,
 } from "react-native";
-import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Canvas, Path, Skia, SkPath, RoundedRect, Image, useImage } from "@shopify/react-native-skia";
+import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Slider from "@react-native-community/slider";
@@ -29,6 +29,18 @@ interface SkiaPathPoint {
   strokeWidth: number;
 }
 
+// Rectangle that covers part of screen where user wants to place media (currently, only images)
+interface Placer {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * 
+ * @note Skia paths refer to drawing paths that are drawn on the canvas, while technically placer paths are also Skia paths, they are used to represent the rectangle that covers the screen where the user wants to place media
+ */
 export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   const [skiaPaths, setSkiaPaths] = useState<SkiaPathPoint[]>([]);
   const [currentSkiaPath, setCurrentSkiaPath] = useState<SkPath | null>(null);
@@ -36,6 +48,12 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   // Stroke options
   const [strokeColor, setStrokeColor] = useState<string>("white"); // State to track the selected color
   const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTHS[StrokeTypes.THIN]);
+
+  // Placer configuration - used to place media on the canvas
+  const [isPlacerMode, setIsPlacerMode] = useState<boolean>(false);
+  const [currentPlacerPath, setCurrentPlacerPath] = useState<Placer|null>(null);
+  const [placerPath, setPlacerPath] = useState<Placer>();
+  const imageIcon = useImage(require('./assets/icons/image_icon.png'));
 
   const [isStrokeOptionsVisible, setIsStrokeOptionsVisible] = useState<boolean>(false); // Color overlay visibility
   const [fontsLoaded] = useFonts({
@@ -49,6 +67,12 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
     prepare();
   }, []);
 
+  useEffect(() => {
+    if (!isPlacerMode) {
+      setPlacerPath(undefined);
+    }
+  },[isPlacerMode]);
+
   if (!fontsLoaded) {
     return null;
   } else {
@@ -59,33 +83,59 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   const onTouchStart = (event: GestureResponderEvent) => {
     const locationX = event.nativeEvent.locationX;
     const locationY = event.nativeEvent.locationY;
-    const newPath = Skia.Path.Make();
-    newPath.moveTo(locationX, locationY);
-    setCurrentSkiaPath(newPath);
+    if (isPlacerMode) {
+      const initPlacer = { x: locationX, y: locationY, width: 0, height: 0 };
+      setCurrentPlacerPath(initPlacer);
+    } else {
+      const newPath = Skia.Path.Make();
+      newPath.moveTo(locationX, locationY);
+      setCurrentSkiaPath(newPath);
+    }
   };
 
   // Handle touch move events
   const onTouchMove = (event: GestureResponderEvent) => {
-    if (currentSkiaPath) {
-      const locationX = event.nativeEvent.locationX;
-      const locationY = event.nativeEvent.locationY;
-      currentSkiaPath.lineTo(locationX, locationY);
-      setCurrentSkiaPath(currentSkiaPath);
+    const locationX = event.nativeEvent.locationX;
+    const locationY = event.nativeEvent.locationY;
+
+    if (isPlacerMode) {
+      if (currentPlacerPath) {
+        const updatedPlacer = {
+          ...currentPlacerPath,
+          width: locationX - currentPlacerPath.x,
+          height: locationY - currentPlacerPath.y,
+        };
+        setCurrentPlacerPath(updatedPlacer);
+        setPlacerPath(updatedPlacer);
+      }
+    } else {
+      if (currentSkiaPath) {
+        currentSkiaPath.lineTo(locationX, locationY);
+        setCurrentSkiaPath(currentSkiaPath);
+      }
     }
   };
 
-  // Handle touch end events
   const onTouchEnd = () => {
-    if (currentSkiaPath) {
-      setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color: strokeColor, strokeWidth: strokeWidth }]);
-      setCurrentSkiaPath(null);
+    if (isPlacerMode) {
+      if (currentPlacerPath) {
+        setPlacerPath(currentPlacerPath);
+        setCurrentPlacerPath(null);
+      }
+    } else {
+      if (currentSkiaPath) {
+        setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color: strokeColor, strokeWidth: strokeWidth }]);
+        setCurrentSkiaPath(null);
+      }
     }
   };
-
   // Clear the canvas
   const clearCanvas = () => {
-    setSkiaPaths([]); // Clear all paths
+    setSkiaPaths([]); // Clear all paint paths
   };
+
+  const imageIconWidth = imageIcon ? imageIcon.width() / 4 : 0;
+  const imageIconHeight = imageIcon ? imageIcon.height() / 4 : 0;
 
   return (
     <View style={styles.container}>
@@ -107,6 +157,29 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
               strokeJoin="round"
             />
           ))}
+          {placerPath && (
+            <>
+              <RoundedRect
+                x={placerPath.x}
+                y={placerPath.y}
+                r={10}
+                width={placerPath.width}
+                height={placerPath.height}
+                color="#ffffff50"
+                style="stroke"
+                strokeWidth={1}
+              />
+              {imageIcon && placerPath && (
+                <Image
+                  image={imageIcon}
+                  x={placerPath.x + placerPath.width / 2 - imageIconWidth / 2}
+                  y={placerPath.y + placerPath.height / 2 - imageIconHeight / 2}
+                  width={imageIconWidth}
+                  height={imageIconHeight}
+                />
+              )}
+            </>
+          )}
           {currentSkiaPath && (
             <Path
               path={currentSkiaPath}
@@ -171,20 +244,29 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
             />
         </View>
 
-      {/* Toggle Stroke Options Button */}
-      <TouchableOpacity
-        onPress={() => setIsStrokeOptionsVisible(true)}
-        style={styles.toggleColorButton}
-      >
-        <View style={styles.colorChangeButton}>
-          <MaterialCommunityIcons
-            name="draw"
-            color="white"
-            size={18}
-          ></MaterialCommunityIcons>
-          <Text style={styles.toggleColorButtonText}>Edit Stroke</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.drawingActions}>
+        <TouchableOpacity onPress={() => setIsPlacerMode(!isPlacerMode)}>
+          {!isPlacerMode && <View style={styles.enablePlacerModeButton}>
+            <MaterialCommunityIcons name="dots-square" size={24} color="white" />
+          </View>}
+          {isPlacerMode && <View style={styles.disablePlacerModeButton}>
+            <MaterialCommunityIcons name="dots-square" size={24} color="#212121" />
+          </View>}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setIsStrokeOptionsVisible(true)}
+          style={styles.toggleColorButton}
+        >
+          <View style={styles.colorChangeButton}>
+            <MaterialCommunityIcons
+              name="draw"
+              color="white"
+              size={18}
+            ></MaterialCommunityIcons>
+            <Text style={styles.toggleColorButtonText}>Edit Stroke</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
       {/* Clear Button */}
       <TouchableOpacity onPress={clearCanvas} style={styles.clearButton}>
@@ -268,7 +350,7 @@ const styles = StyleSheet.create({
   },
   colorPanel: {
     position: "absolute",
-    gap: 5,
+    gap: 15,
     top: 70,
     right: 20
   },
@@ -279,10 +361,14 @@ const styles = StyleSheet.create({
     top: 70,
     left: 20
   },
-  toggleColorButton: {
+  drawingActions: {
     position: "absolute",
     bottom: 40,
     right: 20,
+    gap: 10,
+    alignItems: "flex-end"
+  },
+  toggleColorButton: {
     paddingLeft: 15,
     paddingRight: 15,
     paddingTop: 10,
@@ -328,7 +414,6 @@ const styles = StyleSheet.create({
   colorButton: {
     width: 45,
     height: 45,
-    margin: 10,
     borderRadius: 30,
     borderWidth: 1,
     borderColor: "white",
@@ -358,6 +443,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 1
   },
+  enablePlacerModeButton: {
+    borderColor: COLORS.hotPink,
+    borderWidth: 1,
+    borderRadius: 100,
+    padding: 10,
+  },
+  disablePlacerModeButton: {
+    borderColor: COLORS.hotPink,
+    backgroundColor: COLORS.hotPink,
+    borderWidth: 1,
+    borderRadius: 100,
+    padding: 10,
+  }
 });
 
 export default CanvasComponent;
