@@ -26,6 +26,7 @@ interface CanvasProps {
 interface SkiaPathPoint {
   path: SkPath;
   color: string;
+  strokeWidth: number;
 }
 
 export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
@@ -76,7 +77,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   // Handle touch end events
   const onTouchEnd = () => {
     if (currentSkiaPath) {
-      setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color: strokeColor }]);
+      setSkiaPaths([...skiaPaths, { path: currentSkiaPath, color: strokeColor, strokeWidth: strokeWidth }]);
       setCurrentSkiaPath(null);
     }
   };
@@ -101,7 +102,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
               path={pathObj.path}
               color={pathObj.color}
               style="stroke"
-              strokeWidth={strokeWidth}
+              strokeWidth={pathObj.strokeWidth}
               strokeCap="round"
               strokeJoin="round"
             />
