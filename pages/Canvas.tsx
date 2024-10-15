@@ -15,21 +15,21 @@ import {
   RoundedRect,
   Image,
   useImage,
-  SkImage,
 } from "@shopify/react-native-skia";
 import {
   Ionicons,
   MaterialCommunityIcons,
+  FontAwesome5
 } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import Slider from "@react-native-community/slider";
 import { COLORS } from "./components/common";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../App";
-import { STROKE_WIDTHS, StrokeTypes } from "./components/stroke";
+import { STROKE_WIDTHS, StrokeTypes } from "./components/stroke/stroke";
 import { smoothPath } from "./utils";
-import { ImageCanvas, MediaImage } from "./components/ImageCanvas";
+import { ImageCanvas } from "./components/ImageCanvas";
+import { StrokeWidthOptions } from "./components/stroke/StrokeWidthOptions";
 
 type CanvasNavigationProp = StackNavigationProp<RootStackParamList, "Canvas">;
 
@@ -424,98 +424,14 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
               ></MaterialCommunityIcons>
               <Text style={styles.toggleColorButtonText}>Stroke Options</Text>
             </View>
-            <View style={{ flexDirection: "row", gap: 20 }}>
-              <TouchableOpacity
-                style={[
-                  styles.strokeOptionButton,
-                  {
-                    borderColor:
-                      strokeWidth === STROKE_WIDTHS[StrokeTypes.THIN]
-                        ? "white"
-                        : "#ffffff50",
-                  },
-                ]}
-                onPress={() => {
-                  setStrokeWidth(STROKE_WIDTHS[StrokeTypes.THIN]);
-                }}
-              >
-                <Text
-                  style={{ color: "white", fontSize: 14, textAlign: "center" }}
-                >
-                  Thin
-                </Text>
-                <Text
-                  style={{
-                    color: "#ffffff50",
-                    fontSize: 12,
-                    textAlign: "center",
-                    fontStyle: "italic",
-                  }}
-                >{`${STROKE_WIDTHS[StrokeTypes.THIN]}px`}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.strokeOptionButton,
-                  {
-                    borderColor:
-                      strokeWidth === STROKE_WIDTHS[StrokeTypes.MEDIUM]
-                        ? "white"
-                        : "#ffffff50",
-                  },
-                ]}
-                onPress={() => {
-                  setStrokeWidth(STROKE_WIDTHS[StrokeTypes.MEDIUM]);
-                }}
-              >
-                <Text
-                  style={{ color: "white", fontSize: 14, textAlign: "center" }}
-                >
-                  Medium
-                </Text>
-                <Text
-                  style={{
-                    color: "#ffffff50",
-                    fontSize: 12,
-                    textAlign: "center",
-                    fontStyle: "italic",
-                  }}
-                >{`${STROKE_WIDTHS[StrokeTypes.MEDIUM]}px`}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.strokeOptionButton,
-                  {
-                    borderColor:
-                      strokeWidth === STROKE_WIDTHS[StrokeTypes.HEAVY]
-                        ? "white"
-                        : "#ffffff50",
-                  },
-                ]}
-                onPress={() => {
-                  setStrokeWidth(STROKE_WIDTHS[StrokeTypes.HEAVY]);
-                }}
-              >
-                <Text
-                  style={{ color: "white", fontSize: 14, textAlign: "center" }}
-                >
-                  Heavy
-                </Text>
-                <Text
-                  style={{
-                    color: "#ffffff50",
-                    fontSize: 12,
-                    textAlign: "center",
-                    fontStyle: "italic",
-                  }}
-                >{`${STROKE_WIDTHS[StrokeTypes.HEAVY]}px`}</Text>
-              </TouchableOpacity>
-            </View>
+            <StrokeWidthOptions strokeWidth={strokeWidth} setStrokeWidth={setStrokeWidth}/>
           </View>
           <TouchableOpacity
             style={styles.closeOverlayButton}
             onPress={() => setIsStrokeOptionsVisible(false)}
           >
-            <Text style={styles.closeOverlayText}>Close</Text>
+            <FontAwesome5 name="check" size={16} color="black" />
+            <Text style={styles.closeOverlayText}>Save</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -585,8 +501,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 20,
     marginHorizontal: 30,
-    marginVertical: 300,
-    backgroundColor: "#000000",
+    marginVertical: 250,
+    backgroundColor: "#00000095",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -594,6 +510,7 @@ const styles = StyleSheet.create({
   colorButton: {
     width: 45,
     height: 45,
+    marginRight: 10,
     borderRadius: 30,
     borderWidth: 1,
     borderColor: "white",
@@ -615,12 +532,17 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginTop: 20,
     padding: 5,
+    gap: 5,
     paddingHorizontal: 15,
-    backgroundColor: "#ffffff70",
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row"
   },
   closeOverlayText: {
     color: "black",
     fontSize: 16,
+    fontFamily: "WorkSans",
     letterSpacing: 1,
   },
   enablePlacerModeButton: {
