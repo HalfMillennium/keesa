@@ -168,7 +168,7 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
 
   const [fontsLoaded] = useFonts({
     WorkSans: require("./assets/fonts/WorkSans.ttf"),
-    "WorkSans-Bold": require("./assets/fonts/WorkSans-Bold.ttf")
+    "WorkSans-Bold": require("./assets/fonts/WorkSans-Bold.ttf"),
   });
 
   if (!fontsLoaded) {
@@ -288,9 +288,7 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
           }}
         >
           <View style={{ height: 40, flex: 1 }}>
-            <Text style={styles.mediumHeaderText}>
-              Recent jots
-            </Text>
+            <Text style={styles.mediumHeaderText}>Recent jots</Text>
             <WorkSansText
               style={{
                 fontSize: 12,
@@ -318,7 +316,7 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({ 
+const styles = StyleSheet.create({
   headerText: {
     fontSize: 24,
     fontWeight: "900",
@@ -331,6 +329,6 @@ const styles = StyleSheet.create({
     fontFamily: "WorkSans",
     fontWeight: 600,
     color: COLORS.text,
-    opacity: 0.9
-  }
+    opacity: 0.9,
+  },
 });
