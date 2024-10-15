@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   TouchableOpacity,
@@ -19,7 +19,6 @@ import {
 } from "@shopify/react-native-skia";
 import {
   Ionicons,
-  MaterialIcons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
@@ -66,6 +65,13 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
     STROKE_WIDTHS[StrokeTypes.THIN]
   );
 
+  // Drag-and-pan
+  const [isDragMode, setIsDragMode] = useState<boolean>(false);
+  const pan = useRef({ x: 0, y: 0 }).current; // Store the initial position of the canvas
+  const [position, setPosition] = useState({ x: 0, y: 0 }); // Current position of the canvas
+  const startTouchPosition = useRef({ x: 0, y: 0 }).current; // To store the initial touch point
+
+
   // Placer configuration - used to place media on the canvas
   const [isPlacerMode, setIsPlacerMode] = useState<boolean>(false);
   const [currentPlacerPath, setCurrentPlacerPath] = useState<Placer | null>(
@@ -100,73 +106,98 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 
   // Handle touch start events
   const onTouchStart = (event: GestureResponderEvent) => {
-    const locationX = event.nativeEvent.locationX;
-    const locationY = event.nativeEvent.locationY;
-    if (isPlacerMode) {
-      const initPlacer = { x: locationX, y: locationY, width: 0, height: 0 };
-      setCurrentPlacerPath(initPlacer);
+    if(!isDragMode) {
+      const locationX = event.nativeEvent.locationX;
+      const locationY = event.nativeEvent.locationY;
+      if (isPlacerMode) {
+        const initPlacer = { x: locationX, y: locationY, width: 0, height: 0 };
+        setCurrentPlacerPath(initPlacer);
+      } else {
+        const newPath = Skia.Path.Make();
+        newPath.moveTo(locationX, locationY);
+        setCurrentSkiaPath(newPath);
+      }
     } else {
-      const newPath = Skia.Path.Make();
-      newPath.moveTo(locationX, locationY);
-      setCurrentSkiaPath(newPath);
+      // Capture the initial touch position
+      const touch = event.nativeEvent;
+      startTouchPosition.x = touch.pageX;
+      startTouchPosition.y = touch.pageY;
     }
   };
 
   // Handle touch move events
   const onTouchMove = (event: GestureResponderEvent) => {
-    const locationX = event.nativeEvent.locationX;
-    const locationY = event.nativeEvent.locationY;
-
-    if (isPlacerMode) {
-      if (currentPlacerPath) {
-        let updatedX = currentPlacerPath.x;
-        let updatedY = currentPlacerPath.y;
-        let updatedWidth = locationX - currentPlacerPath.x;
-        let updatedHeight = locationY - currentPlacerPath.y;
-
-        if (updatedWidth < 0) {
-          updatedX = locationX;
-          updatedWidth = Math.abs(updatedWidth);
+    if(!isDragMode) {
+      const locationX = event.nativeEvent.locationX;
+      const locationY = event.nativeEvent.locationY;
+  
+      if (isPlacerMode) {
+        if (currentPlacerPath) {
+          let updatedX = currentPlacerPath.x;
+          let updatedY = currentPlacerPath.y;
+          let updatedWidth = locationX - currentPlacerPath.x;
+          let updatedHeight = locationY - currentPlacerPath.y;
+  
+          if (updatedWidth < 0) {
+            updatedX = locationX;
+            updatedWidth = Math.abs(updatedWidth);
+          }
+  
+          if (updatedHeight < 0) {
+            updatedY = locationY;
+            updatedHeight = Math.abs(updatedHeight);
+          }
+  
+          const updatedPlacer = {
+            x: updatedX,
+            y: updatedY,
+            width: updatedWidth,
+            height: updatedHeight,
+          };
+  
+          setCurrentPlacerPath(updatedPlacer);
+          setPlacerPath(updatedPlacer);
         }
-
-        if (updatedHeight < 0) {
-          updatedY = locationY;
-          updatedHeight = Math.abs(updatedHeight);
+      } else {
+        if (currentSkiaPath) {
+          currentSkiaPath.lineTo(locationX, locationY);
+          setCurrentSkiaPath(currentSkiaPath);
         }
-
-        const updatedPlacer = {
-          x: updatedX,
-          y: updatedY,
-          width: updatedWidth,
-          height: updatedHeight,
-        };
-
-        setCurrentPlacerPath(updatedPlacer);
-        setPlacerPath(updatedPlacer);
       }
     } else {
-      if (currentSkiaPath) {
-        currentSkiaPath.lineTo(locationX, locationY);
-        setCurrentSkiaPath(currentSkiaPath);
-      }
+      const touch = event.nativeEvent;
+      const dx = touch.pageX - startTouchPosition.x;
+      const dy = touch.pageY - startTouchPosition.y;
+  
+      // Update the position of the canvas during the drag
+      setPosition({
+        x: pan.x + dx,
+        y: pan.y + dy,
+      });
     }
   };
 
-  const onTouchEnd = () => {
-    if (isPlacerMode) {
-      if (currentPlacerPath) {
-        setPlacerPath(currentPlacerPath);
-        setCurrentPlacerPath(null);
+  const onTouchEnd = (event: GestureResponderEvent) => {
+    if(!isDragMode) {
+      if (isPlacerMode) {
+        if (currentPlacerPath) {
+          setPlacerPath(currentPlacerPath);
+          setCurrentPlacerPath(null);
+        }
+      } else {
+        if (currentSkiaPath) {
+          const smoothedPath = smoothPath(currentSkiaPath);
+          setSkiaPaths([
+            ...skiaPaths,
+            { path: smoothedPath, color: strokeColor, strokeWidth: strokeWidth },
+          ]);
+          setCurrentSkiaPath(null);
+        }
       }
     } else {
-      if (currentSkiaPath) {
-        const smoothedPath = smoothPath(currentSkiaPath);
-        setSkiaPaths([
-          ...skiaPaths,
-          { path: smoothedPath, color: strokeColor, strokeWidth: strokeWidth },
-        ]);
-        setCurrentSkiaPath(null);
-      }
+      // Save the final position after the user lifts their finger
+      pan.x += event.nativeEvent.pageX - startTouchPosition.x;
+      pan.y += event.nativeEvent.pageY - startTouchPosition.y;
     }
   };
   // Clear the canvas
@@ -179,9 +210,12 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   const image = useImage(require("./assets/images/apple_image.jpg"));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container]}>
       <View
-        style={styles.fullScreenCanvas}
+        style={{
+          flex: 1,
+          transform: [{ translateX: position.x }, { translateY: position.y }],
+        }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -299,7 +333,33 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.drawingActions}>
-        <TouchableOpacity onPress={() => setIsPlacerMode(!isPlacerMode)}>
+      <TouchableOpacity onPress={() => {
+          setIsDragMode(!isDragMode);
+          setIsPlacerMode(false);
+        }}>
+          {!isDragMode && (
+            <View style={styles.enableDragModeButton}>
+              <Ionicons
+                name="hand-right-outline"
+                size={24}
+                color={COLORS.turq}
+              />
+            </View>
+          )}
+          {isDragMode && (
+            <View style={styles.disableDragModeButton}>
+              <Ionicons
+                name="hand-right"
+                size={24}
+                color="#212121"
+              />
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+          setIsPlacerMode(!isPlacerMode);
+          setIsDragMode(false);
+          }}>
           {!isPlacerMode && (
             <View style={styles.enablePlacerModeButton}>
               <MaterialCommunityIcons
@@ -468,9 +528,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.canvasBackground,
   },
-  fullScreenCanvas: {
-    flex: 1,
-  },
   colorPanel: {
     position: "absolute",
     gap: 15,
@@ -568,6 +625,19 @@ const styles = StyleSheet.create({
   },
   enablePlacerModeButton: {
     borderColor: COLORS.hotPink,
+    borderWidth: 1,
+    borderRadius: 100,
+    padding: 10,
+  },
+  enableDragModeButton: {
+    borderColor: COLORS.turq,
+    borderWidth: 1,
+    borderRadius: 100,
+    padding: 10,
+  },
+  disableDragModeButton: {
+    borderColor: COLORS.turq,
+    backgroundColor: COLORS.turq,
     borderWidth: 1,
     borderRadius: 100,
     padding: 10,

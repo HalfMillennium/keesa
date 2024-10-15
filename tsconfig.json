@@ -4,5 +4,6 @@
     "jsx": "react",
     "strict": true,
     "esModuleInterop": true,
+    "module": "es2022"
   }
 }

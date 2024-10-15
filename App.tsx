@@ -1,10 +1,9 @@
-import * as React from "react";
+import React, { Suspense } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { View, StatusBar, StyleSheet } from "react-native"; // Import StatusBar
+import { View, StatusBar, StyleSheet, Text } from "react-native"; // Import StatusBar
 import { Home } from "./pages/Home";
 import { RecordingStudio } from "./pages/RecordingStudio";
-import { CanvasComponent } from "./pages/Canvas";
 
 // Define types for your stack's routes
 export type RootStackParamList = {
@@ -12,6 +11,14 @@ export type RootStackParamList = {
   Studio: undefined;
   Canvas: undefined;
 };
+
+// Lazy load the CanvasComponent
+const CanvasComponent = React.lazy(() => import("./pages/Canvas"));
+const CanvasLoader = (props: any) => (
+  <Suspense fallback={<View><Text>Loading...</Text></View>}>
+    <CanvasComponent {...props} />
+  </Suspense>
+)
 
 // Create a Stack Navigator
 const Stack = createStackNavigator<RootStackParamList>();
@@ -38,7 +45,7 @@ const App: React.FC = () => {
             />
             <Stack.Screen
               name="Canvas"
-              component={CanvasComponent}
+              component={CanvasLoader}
               options={{ headerShown: false, gestureEnabled: false }} // Hide header for Studio
             />
           </Stack.Navigator>
