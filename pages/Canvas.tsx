@@ -7,8 +7,21 @@ import {
   GestureResponderEvent,
   Modal,
 } from "react-native";
-import { Canvas, Path, Skia, SkPath, RoundedRect, Image, useImage } from "@shopify/react-native-skia";
-import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Canvas,
+  Path,
+  Skia,
+  SkPath,
+  RoundedRect,
+  Image,
+  useImage,
+  SkImage,
+} from "@shopify/react-native-skia";
+import {
+  Ionicons,
+  MaterialIcons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import Slider from "@react-native-community/slider";
@@ -17,6 +30,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../App";
 import { STROKE_WIDTHS, StrokeTypes } from "./components/stroke";
 import { smoothPath } from "./utils";
+import { ImageCanvas, MediaImage } from "./components/ImageCanvas";
 
 type CanvasNavigationProp = StackNavigationProp<RootStackParamList, "Canvas">;
 
@@ -39,7 +53,7 @@ interface Placer {
 }
 
 /**
- * 
+ *
  * @note Skia paths refer to drawing paths that are drawn on the canvas, while technically placer paths are also Skia paths, they are used to represent the rectangle that covers the screen where the user wants to place media
  */
 export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
@@ -48,15 +62,19 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 
   // Stroke options
   const [strokeColor, setStrokeColor] = useState<string>("white"); // State to track the selected color
-  const [strokeWidth, setStrokeWidth] = useState<number>(STROKE_WIDTHS[StrokeTypes.THIN]);
+  const [strokeWidth, setStrokeWidth] = useState<number>(
+    STROKE_WIDTHS[StrokeTypes.THIN]
+  );
 
   // Placer configuration - used to place media on the canvas
   const [isPlacerMode, setIsPlacerMode] = useState<boolean>(false);
-  const [currentPlacerPath, setCurrentPlacerPath] = useState<Placer|null>(null);
+  const [currentPlacerPath, setCurrentPlacerPath] = useState<Placer | null>(
+    null
+  );
   const [placerPath, setPlacerPath] = useState<Placer>();
-  const imageIcon = useImage(require('./assets/icons/image_icon.png'));
-
-  const [isStrokeOptionsVisible, setIsStrokeOptionsVisible] = useState<boolean>(false); // Color overlay visibility
+  const imageIcon = useImage(require("./assets/icons/image_icon.png"));
+  const [isStrokeOptionsVisible, setIsStrokeOptionsVisible] =
+    useState<boolean>(false); // Color overlay visibility
   const [fontsLoaded] = useFonts({
     WorkSans: require("./assets/fonts/WorkSans.ttf"),
   });
@@ -72,7 +90,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
     if (!isPlacerMode) {
       setPlacerPath(undefined);
     }
-  },[isPlacerMode]);
+  }, [isPlacerMode]);
 
   if (!fontsLoaded) {
     return null;
@@ -101,11 +119,28 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 
     if (isPlacerMode) {
       if (currentPlacerPath) {
+        let updatedX = currentPlacerPath.x;
+        let updatedY = currentPlacerPath.y;
+        let updatedWidth = locationX - currentPlacerPath.x;
+        let updatedHeight = locationY - currentPlacerPath.y;
+
+        if (updatedWidth < 0) {
+          updatedX = locationX;
+          updatedWidth = Math.abs(updatedWidth);
+        }
+
+        if (updatedHeight < 0) {
+          updatedY = locationY;
+          updatedHeight = Math.abs(updatedHeight);
+        }
+
         const updatedPlacer = {
-          ...currentPlacerPath,
-          width: locationX - currentPlacerPath.x,
-          height: locationY - currentPlacerPath.y,
+          x: updatedX,
+          y: updatedY,
+          width: updatedWidth,
+          height: updatedHeight,
         };
+
         setCurrentPlacerPath(updatedPlacer);
         setPlacerPath(updatedPlacer);
       }
@@ -126,7 +161,10 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
     } else {
       if (currentSkiaPath) {
         const smoothedPath = smoothPath(currentSkiaPath);
-        setSkiaPaths([...skiaPaths, { path: smoothedPath, color: strokeColor, strokeWidth: strokeWidth }]);
+        setSkiaPaths([
+          ...skiaPaths,
+          { path: smoothedPath, color: strokeColor, strokeWidth: strokeWidth },
+        ]);
         setCurrentSkiaPath(null);
       }
     }
@@ -138,6 +176,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 
   const imageIconWidth = imageIcon ? imageIcon.width() / 4 : 0;
   const imageIconHeight = imageIcon ? imageIcon.height() / 4 : 0;
+  const image = useImage(require("./assets/images/apple_image.jpg"));
 
   return (
     <View style={styles.container}>
@@ -148,6 +187,19 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
         onTouchEnd={onTouchEnd}
       >
         <Canvas style={{ flex: 1 }}>
+          {image && placerPath && (
+            <ImageCanvas
+              images={[
+                {
+                  image: image,
+                  x: placerPath.x,
+                  y: placerPath.y,
+                  width: placerPath.width,
+                  height: placerPath.height,
+                },
+              ]}
+            />
+          )}
           {skiaPaths.map((pathObj, index) => (
             <Path
               key={index}
@@ -196,64 +248,76 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
       </View>
 
       <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.navigate("Home")}
-        >
+        style={styles.backButton}
+        onPress={() => navigation.navigate("Home")}
+      >
         <Ionicons name="chevron-back-outline" size={24} color="white" />
       </TouchableOpacity>
       <View style={styles.colorPanel}>
-          <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: "white" }]}
-              onPress={() => {
-                setStrokeColor("white");
-                setIsStrokeOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: COLORS.pastelRed }]}
-              onPress={() => {
-                setStrokeColor(COLORS.pastelRed);
-                setIsStrokeOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: COLORS.babyBlue }]}
-              onPress={() => {
-                setStrokeColor(COLORS.babyBlue);
-                setIsStrokeOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: COLORS.pastelGreen }]}
-              onPress={() => {
-                setStrokeColor(COLORS.pastelGreen);
-                setIsStrokeOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: COLORS.goldYellow }]}
-              onPress={() => {
-                setStrokeColor(COLORS.goldYellow);
-                setIsStrokeOptionsVisible(false);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.colorButton, { backgroundColor: COLORS.softLavender }]}
-              onPress={() => {
-                setStrokeColor(COLORS.softLavender);
-                setIsStrokeOptionsVisible(false);
-              }}
-            />
-        </View>
+        <TouchableOpacity
+          style={[styles.colorButton, { backgroundColor: "white" }]}
+          onPress={() => {
+            setStrokeColor("white");
+            setIsStrokeOptionsVisible(false);
+          }}
+        />
+        <TouchableOpacity
+          style={[styles.colorButton, { backgroundColor: COLORS.pastelRed }]}
+          onPress={() => {
+            setStrokeColor(COLORS.pastelRed);
+            setIsStrokeOptionsVisible(false);
+          }}
+        />
+        <TouchableOpacity
+          style={[styles.colorButton, { backgroundColor: COLORS.babyBlue }]}
+          onPress={() => {
+            setStrokeColor(COLORS.babyBlue);
+            setIsStrokeOptionsVisible(false);
+          }}
+        />
+        <TouchableOpacity
+          style={[styles.colorButton, { backgroundColor: COLORS.pastelGreen }]}
+          onPress={() => {
+            setStrokeColor(COLORS.pastelGreen);
+            setIsStrokeOptionsVisible(false);
+          }}
+        />
+        <TouchableOpacity
+          style={[styles.colorButton, { backgroundColor: COLORS.goldYellow }]}
+          onPress={() => {
+            setStrokeColor(COLORS.goldYellow);
+            setIsStrokeOptionsVisible(false);
+          }}
+        />
+        <TouchableOpacity
+          style={[styles.colorButton, { backgroundColor: COLORS.softLavender }]}
+          onPress={() => {
+            setStrokeColor(COLORS.softLavender);
+            setIsStrokeOptionsVisible(false);
+          }}
+        />
+      </View>
 
       <View style={styles.drawingActions}>
         <TouchableOpacity onPress={() => setIsPlacerMode(!isPlacerMode)}>
-          {!isPlacerMode && <View style={styles.enablePlacerModeButton}>
-            <MaterialCommunityIcons name="dots-square" size={24} color="white" />
-          </View>}
-          {isPlacerMode && <View style={styles.disablePlacerModeButton}>
-            <MaterialCommunityIcons name="dots-square" size={24} color="#212121" />
-          </View>}
+          {!isPlacerMode && (
+            <View style={styles.enablePlacerModeButton}>
+              <MaterialCommunityIcons
+                name="dots-square"
+                size={24}
+                color="white"
+              />
+            </View>
+          )}
+          {isPlacerMode && (
+            <View style={styles.disablePlacerModeButton}>
+              <MaterialCommunityIcons
+                name="dots-square"
+                size={24}
+                color="#212121"
+              />
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setIsStrokeOptionsVisible(true)}
@@ -300,33 +364,90 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
               ></MaterialCommunityIcons>
               <Text style={styles.toggleColorButtonText}>Stroke Options</Text>
             </View>
-            <View style={{flexDirection: 'row', gap: 20}}>
+            <View style={{ flexDirection: "row", gap: 20 }}>
               <TouchableOpacity
-                style={[styles.strokeOptionButton, {borderColor: strokeWidth === STROKE_WIDTHS[StrokeTypes.THIN] ? "white" : "#ffffff50"}]}
+                style={[
+                  styles.strokeOptionButton,
+                  {
+                    borderColor:
+                      strokeWidth === STROKE_WIDTHS[StrokeTypes.THIN]
+                        ? "white"
+                        : "#ffffff50",
+                  },
+                ]}
                 onPress={() => {
                   setStrokeWidth(STROKE_WIDTHS[StrokeTypes.THIN]);
                 }}
               >
-                <Text style={{color: "white", fontSize: 14, textAlign: "center"}}>Thin</Text>
-                <Text style={{color: "#ffffff50", fontSize: 12, textAlign: "center", fontStyle: 'italic'}}>{`${STROKE_WIDTHS[StrokeTypes.THIN]}px`}</Text>
+                <Text
+                  style={{ color: "white", fontSize: 14, textAlign: "center" }}
+                >
+                  Thin
+                </Text>
+                <Text
+                  style={{
+                    color: "#ffffff50",
+                    fontSize: 12,
+                    textAlign: "center",
+                    fontStyle: "italic",
+                  }}
+                >{`${STROKE_WIDTHS[StrokeTypes.THIN]}px`}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.strokeOptionButton, {borderColor: strokeWidth === STROKE_WIDTHS[StrokeTypes.MEDIUM] ? "white" : "#ffffff50"}]}
+                style={[
+                  styles.strokeOptionButton,
+                  {
+                    borderColor:
+                      strokeWidth === STROKE_WIDTHS[StrokeTypes.MEDIUM]
+                        ? "white"
+                        : "#ffffff50",
+                  },
+                ]}
                 onPress={() => {
                   setStrokeWidth(STROKE_WIDTHS[StrokeTypes.MEDIUM]);
                 }}
               >
-                <Text style={{color: "white", fontSize: 14, textAlign: "center"}}>Medium</Text>
-                <Text style={{color: "#ffffff50", fontSize: 12, textAlign: "center", fontStyle: 'italic'}}>{`${STROKE_WIDTHS[StrokeTypes.MEDIUM]}px`}</Text>
+                <Text
+                  style={{ color: "white", fontSize: 14, textAlign: "center" }}
+                >
+                  Medium
+                </Text>
+                <Text
+                  style={{
+                    color: "#ffffff50",
+                    fontSize: 12,
+                    textAlign: "center",
+                    fontStyle: "italic",
+                  }}
+                >{`${STROKE_WIDTHS[StrokeTypes.MEDIUM]}px`}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.strokeOptionButton, {borderColor: strokeWidth === STROKE_WIDTHS[StrokeTypes.HEAVY] ? "white" : "#ffffff50"}]}
+                style={[
+                  styles.strokeOptionButton,
+                  {
+                    borderColor:
+                      strokeWidth === STROKE_WIDTHS[StrokeTypes.HEAVY]
+                        ? "white"
+                        : "#ffffff50",
+                  },
+                ]}
                 onPress={() => {
                   setStrokeWidth(STROKE_WIDTHS[StrokeTypes.HEAVY]);
                 }}
               >
-                <Text style={{color: "white", fontSize: 14, textAlign: "center"}}>Heavy</Text>
-                <Text style={{color: "#ffffff50", fontSize: 12, textAlign: "center", fontStyle: 'italic'}}>{`${STROKE_WIDTHS[StrokeTypes.HEAVY]}px`}</Text>
+                <Text
+                  style={{ color: "white", fontSize: 14, textAlign: "center" }}
+                >
+                  Heavy
+                </Text>
+                <Text
+                  style={{
+                    color: "#ffffff50",
+                    fontSize: 12,
+                    textAlign: "center",
+                    fontStyle: "italic",
+                  }}
+                >{`${STROKE_WIDTHS[StrokeTypes.HEAVY]}px`}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -354,21 +475,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     gap: 15,
     top: 70,
-    right: 20
+    right: 20,
   },
   backButton: {
     padding: 10,
     borderRadius: 5,
     position: "absolute",
     top: 70,
-    left: 20
+    left: 20,
   },
   drawingActions: {
     position: "absolute",
     bottom: 40,
     right: 20,
     gap: 10,
-    alignItems: "flex-end"
+    alignItems: "flex-end",
   },
   toggleColorButton: {
     paddingLeft: 15,
@@ -411,7 +532,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
     borderRadius: 20,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
   colorButton: {
     width: 45,
@@ -426,7 +547,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     borderWidth: 1,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   colorChangeButton: {
     flexDirection: "row",
@@ -443,7 +564,7 @@ const styles = StyleSheet.create({
   closeOverlayText: {
     color: "black",
     fontSize: 16,
-    letterSpacing: 1
+    letterSpacing: 1,
   },
   enablePlacerModeButton: {
     borderColor: COLORS.hotPink,
@@ -457,7 +578,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 100,
     padding: 10,
-  }
+  },
 });
 
 export default CanvasComponent;
