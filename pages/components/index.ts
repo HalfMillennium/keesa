@@ -1,1 +1,1 @@
-export * from './RecentJotBox';
+export * from './RecentDocBox';

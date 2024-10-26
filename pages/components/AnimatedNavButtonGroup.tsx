@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { COLORS } from './common';
 import styled from 'styled-components/native';
+import { Ionicons } from '@expo/vector-icons';
 
 // Styled Component for Text
 export const WorkSansText = styled.Text`
@@ -13,7 +14,7 @@ export const WorkSansText = styled.Text`
 // Define the type for button specs
 export interface AnimatedButtonSpec {
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: any;
   active: boolean;
   onPress: () => void;
 }

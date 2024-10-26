@@ -100,7 +100,7 @@ export const StrokeWidthOptions: React.FC<{
           },
         ]}
         onPress={() => {
-          setStrokeWidth(STROKE_WIDTHS[StrokeTypes.THIN]);
+          setStrokeWidth(STROKE_WIDTHS[StrokeTypes.EXTRA_HEAVY]);
         }}
       >
         <Text style={{ color: "white", fontSize: 14, textAlign: "center" }}>

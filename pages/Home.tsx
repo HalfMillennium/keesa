@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  ScrollView,
   View,
   Easing,
   Text,
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Image,
 } from "react-native";
-import { RecentJotBox } from "./components";
-import { exampleRecentJotContents } from "./example_data/jots";
-import { COLORS, WorkSansText } from "./components/common";
+import { RecentDocs } from "./components/RecentDocs";
+import { exampleRecentDocContents } from "./testing/example_recent_docs";
+import { COLORS } from "./components/common";
 import {
   Ionicons,
   AntDesign,
@@ -53,11 +53,6 @@ const NavBoxContainer = styled.View`
   flex-direction: row;
   justify-content: space-between;
   margin-bottom: 30px;
-`;
-
-const RecentJots = styled.View`
-  gap: 20px;
-  flex: 1;
 `;
 
 const NavBoxLeft: React.FC<NavBoxProps> = ({ onPress, children }) => {
@@ -108,17 +103,6 @@ const mainNavOptions: AnimatedButtonSpec[] = [
     onPress: () => {},
   },
 ];
-
-const allRecentJots = exampleRecentJotContents.map((jot) => {
-  return (
-    <RecentJotBox
-      key={jot.name}
-      title={jot.name}
-      description={jot.description}
-      createdDate={jot.createdDate}
-    />
-  );
-});
 
 interface AnimatedNavBoxProps {
   children: React.ReactNode;
@@ -171,10 +155,20 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
     "WorkSans-Bold": require("./assets/fonts/WorkSans-Bold.ttf"),
   });
 
-  if (!fontsLoaded) {
-    return null;
-  } else {
-    SplashScreen.hideAsync();
+  const resourcesLoaded = fontsLoaded; // Update with more resources eventually
+
+  useEffect(() => {
+    if (resourcesLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [resourcesLoaded]);
+
+  if (!resourcesLoaded) {
+    return (
+      <View style={{ height: "100%", width: "100%", alignItems: "center" }}>
+        <Text>Loading...</Text>
+      </View>
+    );
   }
 
   const handleButtonPress = (button: string) => {
@@ -183,24 +177,7 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
 
   const MainTitle: React.FC = () => {
     return (
-      <View
-        style={{
-          borderBottomWidth: 2,
-          alignSelf: "flex-start",
-          borderColor: COLORS.goldYellow,
-          paddingBottom: 3,
-        }}
-      >
-        <View
-          style={{
-            borderBottomWidth: 2,
-            alignSelf: "flex-start",
-            borderColor: COLORS.hotPink,
-          }}
-        >
-          <Text style={styles.headerText}>keesa</Text>
-        </View>
-      </View>
+      <Image style={{width: 75, aspectRatio: 1}} resizeMode="contain" source={require("./assets/images/keesa_logo_white_large.png")} />
     );
   };
 
@@ -278,40 +255,7 @@ export const Home: React.FC<HomeProps> = ({ navigation }) => {
           </AnimatedNavBox>
         </View>
       </NavBoxContainer>
-      <RecentJots>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            width: "100%",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ height: 40, flex: 1 }}>
-            <Text style={styles.mediumHeaderText}>Recent jots</Text>
-            <WorkSansText
-              style={{
-                fontSize: 12,
-                color: COLORS.goldYellow,
-                opacity: 0.7,
-                width: "100%",
-                flex: 1,
-              }}
-            >
-              Hop back into it. Long press to delete or share.
-            </WorkSansText>
-          </View>
-          <Feather
-            name="more-horizontal"
-            size={24}
-            color={COLORS.text}
-            style={{
-              opacity: 0.2,
-            }}
-          />
-        </View>
-        <ScrollView>{allRecentJots}</ScrollView>
-      </RecentJots>
+      <RecentDocs allRecentDocs={exampleRecentDocContents} />
     </View>
   );
 };
@@ -323,12 +267,5 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     alignSelf: "flex-start",
     width: "auto",
-  },
-  mediumHeaderText: {
-    fontSize: 18,
-    fontFamily: "WorkSans",
-    fontWeight: 600,
-    color: COLORS.text,
-    opacity: 0.9,
   },
 });

@@ -15,7 +15,9 @@
     "dayjs": "*",
     "expo": "~51.0.28",
     "expo-app-loading": "*",
+    "expo-av": "^14.0.7",
     "expo-font": "~12.0.10",
+    "expo-image-picker": "^15.0.7",
     "expo-linear-gradient": "~13.0.2",
     "expo-splash-screen": "~0.27.5",
     "expo-status-bar": "~1.12.1",
@@ -28,6 +30,7 @@
     "react-native-screens": "3.31.1",
     "react-native-svg": "15.2.0",
     "react-native-vector-icons": "*",
+    "react-native-video": "^6.7.0",
     "styled-components": "*"
   },
   "devDependencies": {

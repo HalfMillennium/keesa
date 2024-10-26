@@ -1,9 +1,11 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { View, StatusBar, StyleSheet, Text } from "react-native"; // Import StatusBar
 import { Home } from "./pages/Home";
 import { RecordingStudio } from "./pages/RecordingStudio";
+import { SplashBackground } from "./pages/splash/SplashBackground";
+import { COLORS } from "./pages/components/common";
 
 // Define types for your stack's routes
 export type RootStackParamList = {
@@ -25,8 +27,21 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 // Main App Component
 const App: React.FC = () => {
+  const [isSplashVisible, setSplashVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSplashVisible(false);
+    }, 3000); // Display splash screen for 3 seconds
+
+    return () => clearTimeout(timer); // Cleanup the timer
+  }, []);
+
+  if (isSplashVisible) {
+    return <SplashBackground />;
+  }
   return (
-    <>
+    <View style={{backgroundColor: COLORS.background}}>
       {/* Set the StatusBar style to light-content to make the text white */}
       <StatusBar barStyle="light-content" />
 
@@ -51,7 +66,7 @@ const App: React.FC = () => {
           </Stack.Navigator>
         </NavigationContainer>
       </View>
-    </>
+    </View>
   );
 };
 

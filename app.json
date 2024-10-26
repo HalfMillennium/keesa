@@ -22,6 +22,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Keesa accesses your photos to let you upload them to your canvas."
+        }
+      ]
+    ]
   }
 }

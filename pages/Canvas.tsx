@@ -5,7 +5,7 @@ import {
   Text,
   StyleSheet,
   GestureResponderEvent,
-  Modal,
+  Modal
 } from "react-native";
 import {
   Canvas,
@@ -19,11 +19,11 @@ import {
 import {
   Ionicons,
   MaterialCommunityIcons,
-  FontAwesome5,
+  FontAwesome5
 } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { COLORS } from "./components/common";
+import {COLORS} from "./components/common";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../App";
 import { STROKE_WIDTHS, StrokeTypes } from "./components/stroke/stroke";
@@ -31,6 +31,7 @@ import { smoothPath } from "./utils";
 import { ImageCanvas } from "./components/ImageCanvas";
 import { StrokeWidthOptions } from "./components/stroke/StrokeWidthOptions";
 import { RoundedDashedRect } from "./components/placer/RoundedDashedRect";
+import { TapGestureHandler, State } from "react-native-gesture-handler";
 
 type CanvasNavigationProp = StackNavigationProp<RootStackParamList, "Canvas">;
 
@@ -209,78 +210,91 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
     setSkiaPaths([]); // Clear all paint paths
   };
 
+  const handleDoubleTap = (event: any) => {
+    if (event.nativeEvent.state === State.ACTIVE) {
+      setIsDragMode(true);
+    }
+  };
+
   const imageIconWidth = imageIcon ? imageIcon.width() / 4 : 0;
   const imageIconHeight = imageIcon ? imageIcon.height() / 4 : 0;
   const image = useImage(require("./assets/images/apple_image.jpg"));
 
   return (
     <View style={[styles.container]}>
-      <View
-        style={{
-          flex: 1,
-          transform: [{ translateX: position.x }, { translateY: position.y }],
-        }}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+      <TapGestureHandler
+        onHandlerStateChange={handleDoubleTap}
+        numberOfTaps={2}
       >
-        <Canvas style={{ flex: 1 }}>
-          {image && placerPath && (
-            <ImageCanvas
-              images={[
-                {
-                  image: image,
-                  x: placerPath.x,
-                  y: placerPath.y,
-                  width: placerPath.width,
-                  height: placerPath.height,
-                },
-              ]}
-            />
-          )}
-          {skiaPaths.map((pathObj, index) => (
-            <Path
-              key={index}
-              path={pathObj.path}
-              color={pathObj.color}
-              style="stroke"
-              strokeWidth={pathObj.strokeWidth}
-              strokeCap="round"
-              strokeJoin="round"
-            />
-          ))}
-          {placerPath && (
-            <>
-              <RoundedDashedRect
-                x={placerPath.x}
-                y={placerPath.y}
-                r={10}
-                width={placerPath.width}
-                height={placerPath.height}
+        <View
+          style={{
+            flex: 1,
+            transform: [{ translateX: position.x }, { translateY: position.y }],
+          }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          <Canvas style={{ flex: 1 }}>
+            {image && placerPath && (
+              <ImageCanvas
+                images={[
+                  {
+                    image: image,
+                    x: placerPath.x,
+                    y: placerPath.y,
+                    width: placerPath.width,
+                    height: placerPath.height,
+                  },
+                ]}
               />
-              {imageIcon && placerPath && (
-                <Image
-                  image={imageIcon}
-                  x={placerPath.x + placerPath.width / 2 - imageIconWidth / 2}
-                  y={placerPath.y + placerPath.height / 2 - imageIconHeight / 2}
-                  width={imageIconWidth}
-                  height={imageIconHeight}
+            )}
+            {skiaPaths.map((pathObj, index) => (
+              <Path
+                key={index}
+                path={pathObj.path}
+                color={pathObj.color}
+                style="stroke"
+                strokeWidth={pathObj.strokeWidth}
+                strokeCap="round"
+                strokeJoin="round"
+              />
+            ))}
+            {placerPath && (
+              <>
+                <RoundedDashedRect
+                  x={placerPath.x}
+                  y={placerPath.y}
+                  r={10}
+                  width={placerPath.width}
+                  height={placerPath.height}
                 />
-              )}
-            </>
-          )}
-          {currentSkiaPath && (
-            <Path
-              path={currentSkiaPath}
-              color={strokeColor}
-              style="stroke"
-              strokeWidth={strokeWidth}
-              strokeCap="round"
-              strokeJoin="round"
-            />
-          )}
-        </Canvas>
-      </View>
+                {imageIcon && placerPath && (
+                  <Image
+                    image={imageIcon}
+                    x={placerPath.x + placerPath.width / 2 - imageIconWidth / 2}
+                    y={
+                      placerPath.y + placerPath.height / 2 - imageIconHeight / 2
+                    }
+                    width={imageIconWidth}
+                    height={imageIconHeight}
+                  />
+                )}
+              </>
+            )}
+            {currentSkiaPath && (
+              <Path
+                path={currentSkiaPath}
+                color={strokeColor}
+                style="stroke"
+                strokeWidth={strokeWidth}
+                strokeCap="round"
+                strokeJoin="round"
+              />
+            )}
+          </Canvas>
+        </View>
+      </TapGestureHandler>
 
       <TouchableOpacity
         style={styles.backButton}
@@ -446,7 +460,13 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.canvasBackground,
+    backgroundColor: COLORS.background,
+  },
+  backgroundImage: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    zIndex: -1, // Ensure the background image is behind other elements
   },
   colorPanel: {
     position: "absolute",
