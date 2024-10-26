@@ -19,7 +19,7 @@ import {
 import {
   Ionicons,
   MaterialCommunityIcons,
-  FontAwesome5
+  FontAwesome5,
 } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -30,6 +30,7 @@ import { STROKE_WIDTHS, StrokeTypes } from "./components/stroke/stroke";
 import { smoothPath } from "./utils";
 import { ImageCanvas } from "./components/ImageCanvas";
 import { StrokeWidthOptions } from "./components/stroke/StrokeWidthOptions";
+import { RoundedDashedRect } from "./components/placer/RoundedDashedRect";
 
 type CanvasNavigationProp = StackNavigationProp<RootStackParamList, "Canvas">;
 
@@ -71,7 +72,6 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 }); // Current position of the canvas
   const startTouchPosition = useRef({ x: 0, y: 0 }).current; // To store the initial touch point
 
-
   // Placer configuration - used to place media on the canvas
   const [isPlacerMode, setIsPlacerMode] = useState<boolean>(false);
   const [currentPlacerPath, setCurrentPlacerPath] = useState<Placer | null>(
@@ -106,7 +106,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 
   // Handle touch start events
   const onTouchStart = (event: GestureResponderEvent) => {
-    if(!isDragMode) {
+    if (!isDragMode) {
       const locationX = event.nativeEvent.locationX;
       const locationY = event.nativeEvent.locationY;
       if (isPlacerMode) {
@@ -127,34 +127,34 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
 
   // Handle touch move events
   const onTouchMove = (event: GestureResponderEvent) => {
-    if(!isDragMode) {
+    if (!isDragMode) {
       const locationX = event.nativeEvent.locationX;
       const locationY = event.nativeEvent.locationY;
-  
+
       if (isPlacerMode) {
         if (currentPlacerPath) {
           let updatedX = currentPlacerPath.x;
           let updatedY = currentPlacerPath.y;
           let updatedWidth = locationX - currentPlacerPath.x;
           let updatedHeight = locationY - currentPlacerPath.y;
-  
+
           if (updatedWidth < 0) {
             updatedX = locationX;
             updatedWidth = Math.abs(updatedWidth);
           }
-  
+
           if (updatedHeight < 0) {
             updatedY = locationY;
             updatedHeight = Math.abs(updatedHeight);
           }
-  
+
           const updatedPlacer = {
             x: updatedX,
             y: updatedY,
             width: updatedWidth,
             height: updatedHeight,
           };
-  
+
           setCurrentPlacerPath(updatedPlacer);
           setPlacerPath(updatedPlacer);
         }
@@ -168,7 +168,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
       const touch = event.nativeEvent;
       const dx = touch.pageX - startTouchPosition.x;
       const dy = touch.pageY - startTouchPosition.y;
-  
+
       // Update the position of the canvas during the drag
       setPosition({
         x: pan.x + dx,
@@ -178,7 +178,7 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
   };
 
   const onTouchEnd = (event: GestureResponderEvent) => {
-    if(!isDragMode) {
+    if (!isDragMode) {
       if (isPlacerMode) {
         if (currentPlacerPath) {
           setPlacerPath(currentPlacerPath);
@@ -189,7 +189,11 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
           const smoothedPath = smoothPath(currentSkiaPath);
           setSkiaPaths([
             ...skiaPaths,
-            { path: smoothedPath, color: strokeColor, strokeWidth: strokeWidth },
+            {
+              path: smoothedPath,
+              color: strokeColor,
+              strokeWidth: strokeWidth,
+            },
           ]);
           setCurrentSkiaPath(null);
         }
@@ -247,15 +251,12 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
           ))}
           {placerPath && (
             <>
-              <RoundedRect
+              <RoundedDashedRect
                 x={placerPath.x}
                 y={placerPath.y}
                 r={10}
                 width={placerPath.width}
                 height={placerPath.height}
-                color="#ffffff50"
-                style="stroke"
-                strokeWidth={1}
               />
               {imageIcon && placerPath && (
                 <Image
@@ -333,10 +334,12 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.drawingActions}>
-      <TouchableOpacity onPress={() => {
-          setIsDragMode(!isDragMode);
-          setIsPlacerMode(false);
-        }}>
+        <TouchableOpacity
+          onPress={() => {
+            setIsDragMode(!isDragMode);
+            setIsPlacerMode(false);
+          }}
+        >
           {!isDragMode && (
             <View style={styles.enableDragModeButton}>
               <Ionicons
@@ -348,18 +351,16 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
           )}
           {isDragMode && (
             <View style={styles.disableDragModeButton}>
-              <Ionicons
-                name="hand-right"
-                size={24}
-                color="#212121"
-              />
+              <Ionicons name="hand-right" size={24} color="#212121" />
             </View>
           )}
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          setIsPlacerMode(!isPlacerMode);
-          setIsDragMode(false);
-          }}>
+        <TouchableOpacity
+          onPress={() => {
+            setIsPlacerMode(!isPlacerMode);
+            setIsDragMode(false);
+          }}
+        >
           {!isPlacerMode && (
             <View style={styles.enablePlacerModeButton}>
               <MaterialCommunityIcons
@@ -424,7 +425,10 @@ export const CanvasComponent: React.FC<CanvasProps> = ({ navigation }) => {
               ></MaterialCommunityIcons>
               <Text style={styles.toggleColorButtonText}>Stroke Options</Text>
             </View>
-            <StrokeWidthOptions strokeWidth={strokeWidth} setStrokeWidth={setStrokeWidth}/>
+            <StrokeWidthOptions
+              strokeWidth={strokeWidth}
+              setStrokeWidth={setStrokeWidth}
+            />
           </View>
           <TouchableOpacity
             style={styles.closeOverlayButton}
@@ -537,7 +541,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "row"
+    flexDirection: "row",
   },
   closeOverlayText: {
     color: "black",
